@@ -71,35 +71,43 @@ public class CKYParser {
 		for (int j = 0; j < numWords; j++) {
 			for (int i = j-1; i >= 0; i--) {
 				theTable[i][j] = new CKYEntry(i,j);
-				
-				
 			}
 		}
+		possibleGrammar(theTable[0][1], theTable[0][0], theTable[1][1]);
+		System.out.println(theTable[0][1]);
 		
 		return "";
 	}
 	
 	private void possibleGrammar(CKYEntry original, CKYEntry left, CKYEntry right) {
-		for (GrammarRule leftSide : left.allRules()) {
-			for (GrammarRule rightSide : right.allRules()) {
+		for (String leftSide : left.allRules()) {
+			for (String rightSide : right.allRules()) {
+				// create a new arraylist with two elements with left side as the first and 
+				// right side as the second
+				ArrayList<String> rhs = new ArrayList<String>();
+				rhs.add(leftSide);
+				rhs.add(rightSide);
 				
+				if (binaryRules.containsKey(rhs)) {
+					add(binaryRules.get(rhs), original);
+				}
 			}
 		}
 	}
 	private void add(GrammarRule rule, CKYEntry entry){
 		Double sum = rule.weight;
 		GrammarRule currentRule = rule;
-		entry.addRule(rule, sum);
+		entry.addRule(rule.getLhs(), sum);
 		while (unaryRules.containsKey(currentRule.getLhs())) {
 			GrammarRule newRule = unaryRules.get(currentRule.getLhs());
 			sum += newRule.weight;
 			
-			if (entry.containsRule(newRule)) {
-				if (sum > entry.getWeight(rule)) {
-					entry.addRule(newRule, sum);
+			if (entry.containsRule(newRule.getLhs())) {
+				if (sum > entry.getWeight(rule.getLhs())) {
+					entry.addRule(newRule.getLhs(), sum);
 				}
 			} else {
-				entry.addRule(newRule, sum);
+				entry.addRule(newRule.getLhs(), sum);
 			}
 			currentRule = newRule;
 		}

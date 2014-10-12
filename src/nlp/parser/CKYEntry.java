@@ -4,7 +4,7 @@ import java.util.Hashtable;
 import java.util.Set;
 
 public class CKYEntry {
-	private Hashtable<GrammarRule, Double> rules = new Hashtable<GrammarRule, Double>();
+	private Hashtable<String, Double> rules = new Hashtable<String, Double>();
 	private int i;
 	private int j;
 
@@ -13,18 +13,18 @@ public class CKYEntry {
 		this.j = j;
 	}
 	
-	public Set<GrammarRule> allRules() {
+	public Set<String> allRules() {
 		return rules.keySet();
 	}
 	
-	public boolean containsRule(GrammarRule rule) {
+	public boolean containsRule(String rule) {
 		return rules.containsKey(rule);
 	}
 	
-	public Double getWeight(GrammarRule rule) {
+	public Double getWeight(String rule) {
 		return rules.get(rule);
 	}
-	public void addRule(GrammarRule rule, Double weight) {
+	public void addRule(String rule, Double weight) {
 		rules.put(rule, weight);
 	}
 	
