@@ -6,7 +6,7 @@ import java.util.Hashtable;
 import java.util.Scanner;
 
 public class CKYParser {
-	private Hashtable<ArrayList<String>, GrammarRule> binaryRules = new Hashtable<ArrayList<String>, GrammarRule>();
+	private Hashtable<String, GrammarRule> binaryRules = new Hashtable<String, GrammarRule>();
 	private Hashtable<String, GrammarRule> unaryRules = new Hashtable<String, GrammarRule>();
 	private Hashtable<String, ArrayList<GrammarRule>> lexicalRules = new Hashtable<String, ArrayList<GrammarRule>>();
 	
@@ -34,7 +34,7 @@ public class CKYParser {
 				} else {
 					if (rule.getRhs().size() > 1) {
 						// binary rule
-						binaryRules.put(rule.getRhs(), rule);
+						binaryRules.put(rule.getRhs().toString(), rule);
 					} else {
 						unaryRules.put(rule.getRhs().get(0), rule);
 					}
@@ -62,20 +62,25 @@ public class CKYParser {
 
 			// add all the rules to the entry
 			for (GrammarRule gr: allRules) {
-				add(gr, theTable[i][j]);
+				add(gr, theTable[i][j], 0.0, -1, -1);
 			}
-			System.out.println(i + " , " + j + " " + theTable[i][j]);
 		}
 		
 		// fill in the rest of the table
 		for (int j = 0; j < numWords; j++) {
 			for (int i = j-1; i >= 0; i--) {
 				theTable[i][j] = new CKYEntry(i,j);
+				for (int n = j; n > i; n--) {
+					possibleGrammar(theTable[i][j], theTable[i][n-1], theTable[n][j]);
+				}
 			}
 		}
-		possibleGrammar(theTable[0][1], theTable[0][0], theTable[1][1]);
-		System.out.println(theTable[0][1]);
 		
+		for (int i = 0; i < numWords; i++) {
+			for (int j = 0; j < numWords; j++) {
+				System.out.println(theTable[i][j]);
+			}
+		}
 		return "";
 	}
 	
@@ -87,27 +92,35 @@ public class CKYParser {
 				ArrayList<String> rhs = new ArrayList<String>();
 				rhs.add(leftSide);
 				rhs.add(rightSide);
-				
-				if (binaryRules.containsKey(rhs)) {
-					add(binaryRules.get(rhs), original);
+				if (binaryRules.containsKey(rhs.toString())) {
+					add(binaryRules.get(rhs.toString()), original, left.getWeight(leftSide)+right.getWeight(rightSide), left.getJ(), right.getI());
 				}
 			}
 		}
 	}
-	private void add(GrammarRule rule, CKYEntry entry){
-		Double sum = rule.weight;
+	private void add(GrammarRule rule, CKYEntry entry, Double originalWeight, int leftPointer, int rightPointer){
+		Double sum = originalWeight + rule.weight;
+		if (entry.containsRule(rule.getLhs())) {
+			if (sum > entry.getWeight(rule.getLhs())) {
+				entry.addRule(rule.getLhs(), sum, leftPointer, rightPointer);
+			} else {
+				return;
+			}
+		}
 		GrammarRule currentRule = rule;
-		entry.addRule(rule.getLhs(), sum);
+		entry.addRule(rule.getLhs(), sum, leftPointer, rightPointer);
 		while (unaryRules.containsKey(currentRule.getLhs())) {
 			GrammarRule newRule = unaryRules.get(currentRule.getLhs());
 			sum += newRule.weight;
 			
 			if (entry.containsRule(newRule.getLhs())) {
 				if (sum > entry.getWeight(rule.getLhs())) {
-					entry.addRule(newRule.getLhs(), sum);
+					entry.addRule(newRule.getLhs(), sum, leftPointer, rightPointer);
+					entry.addUnigramPointer(newRule.getLhs(), newRule.getRhs().get(0));
 				}
 			} else {
-				entry.addRule(newRule.getLhs(), sum);
+				entry.addRule(newRule.getLhs(), sum, leftPointer, rightPointer);
+				entry.addUnigramPointer(newRule.getLhs(), newRule.getRhs().get(0));
 			}
 			currentRule = newRule;
 		}
